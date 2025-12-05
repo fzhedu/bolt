@@ -52,7 +52,7 @@ Bolt is designed as a seamless acceleration layer that requires minimum code cha
 We provide scripts to help developers setup and install Bolt dependencies.
 
 ```shell
-. scripts/setup-dev-env.sh
+scripts/setup-dev-env.sh
 ```
 
 This script only exports conan recipes to local cache. For the first time, dependencies will be built from source and installed into local cache. You can setup your own [conan server](https://docs.conan.io/2/reference/conan_server.html#conan-server) to accelerate building.
@@ -73,8 +73,8 @@ an optimized version.  Use `make unittest` to build and run tests.
 # building bolt for spark
 make release_spark
 
-# In master branch, by default, BUILD_VERSION is master.
-make release_spark BUILD_VERSION=master
+# In main branch, by default, BUILD_VERSION is main.
+make release_spark BUILD_VERSION=main
 ```
 
 ### Importing Bolt as a library
@@ -83,7 +83,7 @@ make release_spark BUILD_VERSION=master
 # Take gluten for example:
 class GluenConan(ConanFile):
   def requirements(self):
-    bolt_version="master"
+    bolt_version="main"
     self.requires(f"bolt/{bolt_version}", transitive_headers=True, transitive_libs=True)
 ```
 
