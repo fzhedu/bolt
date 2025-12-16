@@ -2,6 +2,22 @@
 
 Welcome to the Bolt community! Bolt is a C++ acceleration library focused on high performance, designed to provide a consistent physical execution layer for various frameworks and data formats. We welcome and appreciate all forms of contributions from the community, whether it's fixing bugs, improving documentation, adding tests, optimizing performance, or implementing new features.
 
+## Table of Contents
+- [How You Can Contribute](#how-you-can-contribute)
+- [Development Environment Setup](#development-environment-setup)
+- [Fork and PR Workflow](#fork-and-pr-workflow)
+- [Building and Testing](#building-and-testing)
+  - [Common Targets](#common-targets)
+  - [Working with IDE](#working-with-ide)
+- [Code Style and Static Analysis](#code-style-and-static-analysis)
+  - [Formatting (clang-format)](#formatting-clang-format)
+  - [Static Analysis (clang-tidy)](#static-analysis-clang-tidy)
+  - [Code of Conduct](#code-of-conduct)
+- [Unit Testing](#unit-testing)
+- [Copyright and Licensing](#copyright-and-licensing)
+- [Getting Help](#getting-help)
+
+
 ## How You Can Contribute
 
 - **Report Issues**: Describe bugs or suggest enhancements to GitHub Issues. Please provide detailed reproduction steps and environment information. For example:
@@ -58,7 +74,7 @@ This script will:
 
 ## Fork and PR Workflow
 
-We follow the standard GitHub fork-and-PR workflow. For details, please refer to [workflow](doc/workflow.md):
+We follow the standard GitHub fork-and-PR workflow. For details, please refer to [workflow](./doc/workflow.md):
 
 1. **Fork** the `bytedance/bolt` repository to your personal GitHub account.
 	
@@ -109,7 +125,7 @@ make release_spark BUILD_VERSION=main
 
 ### Working with IDE
 
-[Vscode](doc/vscode-config.md) in Chinese.
+[Vscode](./doc/vscode-config.md) in Chinese.
 
 ## Code Style and Static Analysis
 
@@ -119,7 +135,7 @@ To maintain consistent code quality and style, please run the following checks b
 	
 - **Formatting**: We use `clang-format-14`.
 	
-- **Naming**: Follow the \[Style Guide\](CODING\_STYLE.md).
+- **Naming**: Follow the [Style Guide](./doc/coding-style.md).
 	
 
 ### Formatting (clang-format)
@@ -162,7 +178,7 @@ The script uses different check sets for test and main code. Please ensure your 
 
 The Bolt project and all its contributors are governed by a [Code of Conduct.](https://www.apache.org/foundation/policies/conduct.html) By participating, you are expected to uphold this code.
 
-## Unit Testing Conventions
+## Unit Testing
 
 - **Framework**: We use GoogleTest (see `bolt/bolt/expression/tests/*` for example).
 	
