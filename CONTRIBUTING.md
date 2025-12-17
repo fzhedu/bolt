@@ -212,7 +212,7 @@ ENABLE_ASAN=True make unittest_release
 
 - **License**: Apache 2.0 (see `LICENSE` and `NOTICE.txt`).
 	
-- **Headers**: All new source files must include the Apache 2.0 license header. You can copy it from the `license.header` template file and paste it (as a comment) at the top of your `.cpp` and `.h` files.
+- **Headers**: All new source files must include the Apache 2.0 license header. You can copy it from the `license.header` template file and paste it (as a comment) at the top of all source code files.
 	
 
 ## Getting Help

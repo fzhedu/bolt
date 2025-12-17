@@ -31,7 +31,7 @@
 
 - Remote端下载clangd插件。
 	
-- 在.vscode下面创建settings.json，将如下内容复制到settings.json中，标黄的部分需要替换成你自己的build目录下的debug目录，一般为`/``home/{your_home}/``bolt/_build/Debug/`(写绝对路径)。注意：通过该路径需要能够找到build目录中的compile\_commands.json文件，因为构建索引需要依赖compile\_commands.json文件。
+- 在.vscode下面创建settings.json，将如下内容复制到settings.json中，需要经路径替换成你自己的build目录下的debug目录，一般为`/``home/{your_home}/``bolt/_build/Release/`(写绝对路径)。注意：通过该路径需要能够找到build目录中的compile\_commands.json文件，因为构建索引需要依赖compile\_commands.json文件。
 	
 - *ctrl+shift+p* 打开命令窗口，输入 *Clangd* 然后在命令列表里面找到 `clangd: Download language server` , 点击安装语言服务器； 安装完成后会提示重新加载。
 	
@@ -131,7 +131,7 @@
         "--suggest-missing-includes",
         "-log=verbose", 
         "-pretty",
-        "--compile-commands-dir=/home/wangxinshuo.db/Gluten/bolt/_build/Debug/"
+        "--compile-commands-dir=/home/{your_home}/Gluten/bolt/_build/Release/"
     ]
 }
 ```
@@ -151,7 +151,7 @@
 - 然后将如下配置信息填入launch.json文件中，如下几个参数需要++自定义++：
 	- "name"：当前调试配置的名称。一般项目中会涉及到多个可执行文件的调试，因此“configurations”配置列表中可能会有多个配置选项。
 		
-	- "program"：你打算调试的可执行文件的完整路径，这里如果我需要调试velox\_exec\_test这个测试代码，则需要将其完整路径填写在program中。
+	- "program"：你打算调试的可执行文件的完整路径，这里如果我需要调试bolt\_exec\_test这个测试代码，则需要将其完整路径填写在program中。
 		
 	- "args"：由于gtest执行可执行文件的时候一般利用--gtest\_filter将单元测试的范围限定到某一个单元中，因此利用gdb调试的时候可以将参数信息填写到args中。
 		
@@ -169,14 +169,14 @@
             "name": "GDB",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/home/yangshijie.2024/bolt/_build/Debug/velox/exec/tests/velox_exec_test",
+            "program": "/home/{your_home}/bolt/_build/Debug/bolt/exec/tests/bolt_exec_test",
             "args": [
                 "--gtest_filter=*SpillTest.spillState*",
                 // GTEST 中的 EXPECT/ASSERT 失败时立刻 break
                 "--gtest_break_on_failure"
             ],
             "stopAtEntry": false,
-            "cwd": "/home/yangshijie.2024/bolt",
+            "cwd": "/home/{your_home}/bolt",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
