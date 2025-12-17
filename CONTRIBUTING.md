@@ -125,7 +125,7 @@ make release_spark BUILD_VERSION=main
 
 ### Working with IDE
 
-[Vscode](./doc/vscode-config.md) in Chinese.
+Vscode guide in [English](./doc/vscode-config-en.md) or [Chinese](./doc/vscode-config.md). 
 
 ## Code Style and Static Analysis
 
