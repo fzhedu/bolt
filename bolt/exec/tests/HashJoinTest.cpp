@@ -29,6 +29,7 @@
  * --------------------------------------------------------------------------
  */
 
+#include <core/PlanNode.h>
 #include <re2/re2.h>
 
 #include <fmt/format.h>
@@ -4342,6 +4343,70 @@ TEST_F(HashJoinTest, lazyVectors) {
         .makeInputSplits(makeInputSplits(probeScanId, buildScanId))
         .referenceQuery(
             "SELECT t.c1 + 1, U.c1, length(t.c3) FROM t, u WHERE t.c0 = u.c0 and t.c2 < 29 and (t.c1 + u.c1) % 33 < 27")
+        .run();
+  }
+
+  {
+    auto planNodeIdGenerator = std::make_shared<core::PlanNodeIdGenerator>();
+    core::PlanNodeId probeScanId;
+    core::PlanNodeId buildScanId;
+    auto op = PlanBuilder(planNodeIdGenerator)
+                  .tableScan(
+                      ROW({"c0", "c1", "c2", "c3"},
+                          {INTEGER(), BIGINT(), INTEGER(), VARCHAR()}))
+                  .capturePlanNodeId(probeScanId)
+                  .filter("c2 < 29")
+                  .hashJoin(
+                      {"c0"},
+                      {"bc0"},
+                      PlanBuilder(planNodeIdGenerator)
+                          .tableScan(ROW({"c0", "c1"}, {INTEGER(), BIGINT()}))
+                          .capturePlanNodeId(buildScanId)
+                          .project({"c0 as bc0", "c1 as bc1"})
+                          .planNode(),
+                      "(c1 + bc1) % 33 < 27",
+                      {"c1", "bc1", "c3"},
+                      core::JoinType::kLeft)
+                  .filter("bc1 is null")
+                  .project({"c1 + 1", "bc1", "length(c3)"})
+                  .planNode();
+
+    HashJoinBuilder(*pool_, duckDbQueryRunner_, driverExecutor_.get())
+        .planNode(std::move(op))
+        .makeInputSplits(makeInputSplits(probeScanId, buildScanId))
+        .referenceQuery(
+            "SELECT t.c1 + 1, U.c1, length(t.c3) FROM t left join u on t.c0 = u.c0 and (t.c1 + u.c1) % 33 < 27 where t.c2 < 29 and u.c1 is null")
+        .run();
+  }
+  {
+    auto planNodeIdGenerator = std::make_shared<core::PlanNodeIdGenerator>();
+    core::PlanNodeId probeScanId;
+    core::PlanNodeId buildScanId;
+    auto op = PlanBuilder(planNodeIdGenerator)
+                  .tableScan(
+                      ROW({"c0", "c1", "c2", "c3"},
+                          {INTEGER(), BIGINT(), INTEGER(), VARCHAR()}))
+                  .capturePlanNodeId(probeScanId)
+                  .hashJoin(
+                      {"c0"},
+                      {"bc0"},
+                      PlanBuilder(planNodeIdGenerator)
+                          .tableScan(ROW({"c0", "c1"}, {INTEGER(), BIGINT()}))
+                          .capturePlanNodeId(buildScanId)
+                          .project({"c0 as bc0", "c1 as bc1"})
+                          .planNode(),
+                      "",
+                      {"c1", "bc1", "c3"},
+                      core::JoinType::kLeft)
+                  .filter("bc1 is null")
+                  .project({"c1 + 1", "bc1", "length(c3)"})
+                  .planNode();
+
+    HashJoinBuilder(*pool_, duckDbQueryRunner_, driverExecutor_.get())
+        .planNode(std::move(op))
+        .makeInputSplits(makeInputSplits(probeScanId, buildScanId))
+        .referenceQuery(
+            "SELECT t.c1 + 1, U.c1, length(t.c3) FROM t left join u on t.c0 = u.c0 where u.c1 is null")
         .run();
   }
 }
