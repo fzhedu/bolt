@@ -2,7 +2,7 @@
 
 Welcome to the Bolt community! Bolt is a C++ acceleration library focused on high performance, designed to provide a consistent physical execution layer for various frameworks and data formats. We welcome and appreciate all forms of contributions from the community, whether it's fixing bugs, improving documentation, adding tests, optimizing performance, or implementing new features.
 
-## Table of Contents
+## List of Contents
 - [How You Can Contribute](#how-you-can-contribute)
 - [Development Environment Setup](#development-environment-setup)
 - [Fork and PR Workflow](#fork-and-pr-workflow)
