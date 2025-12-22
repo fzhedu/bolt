@@ -7,7 +7,7 @@ index ed8cb79fd..a25132990 100644
      url: "https://www.apache.org/dyn/closer.lua/arrow/arrow-16.1.0/apache-arrow-16.1.0.tar.gz?action=download"
      sha256: "c9e60c7e87e59383d21b20dc874b17153729ee153264af6d21654b7dff2c60d7"
 +  "15.0.1-oss":
-+    url: "https://www.apache.org/dyn/closer.lua/arrow/arrow-15.0.1/apache-arrow-15.0.1.tar.gz?action=download"
++    url: "https://tosv.byted.org/obj/bolt-test-cn/conan_package/apache-arrow-15.0.1.tar.gz" # in tos bucket bolt-test-cn
 +    sha256: "55db63ed9fd6917b7abfe5d4186c9f532cbe48aa53f4040d57e7c29ad70bcefa"
    "15.0.0":
      url: "https://www.apache.org/dyn/closer.lua/arrow/arrow-15.0.0/apache-arrow-15.0.0.tar.gz?action=download"
