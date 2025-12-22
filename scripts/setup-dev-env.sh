@@ -28,14 +28,36 @@
 
 CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-set -eu
+set -e
+
+function check_basic_tools() {
+    local tools=("wget" "make" "cmake" "ninja")
+    local all_installed=true
+    
+    for tool in "${tools[@]}"; do
+        if command -v "$tool" >/dev/null 2>&1; then
+            printf "✅ Already installed $tool\n"
+        else
+            printf "❌ Not installed $tool\n"
+            all_installed=false
+        fi
+    done
+    
+    if ! $all_installed; then
+        echo "Bolt require basic tools like ${tools[@]} been installed, please install missing tools!"
+        return 1
+    else
+        echo "All required tools have been installed!"
+        return 0
+    fi
+}
 
 function check_compiler() {
     if command -v gcc &> /dev/null; then
-        gcc_version=$(gcc -dumpversion)
+        gcc_version=$(gcc -dumpversion | cut -f1 -d.)
 
-        if [[ "$gcc_version" -eq 10 || "$gcc_version" -eq 11 || "$gcc_version" -eq 12 ]]; then
-            echo "✅ gcc version：$gcc_version"
+        if [ "$gcc_version" -eq 10 ] || [ "$gcc_version" -eq 11 ] || [ "$gcc_version" -eq 12 ]; then
+            echo "✅ gcc version: $gcc_version"
             return 0
         fi
     else
@@ -43,28 +65,25 @@ function check_compiler() {
     fi
     
     echo "Bolt requires gcc-10/gcc-11/gcc-12/clang-16. Please install the correct compiler version."
-    echo "Install complier by running(with root user): bash ${CUR_DIR}/install-gcc.sh"
+    echo "Install compiler by running(with root user): bash ${CUR_DIR}/install-gcc.sh"
     return 1
 }
 
-function check_conan() {
-    if command -v conan &> /dev/null; then
-        echo "✅ conan is installed"   
-    else
-        if [ ! -d ~/miniconda3 ]; then
-            echo "Installing conda"  
-            MINICONDA_VERSION=py310_23.1.0-1
-            MINICONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-${MINICONDA_VERSION}-Linux-$(arch).sh 
-            wget --progress=dot:mega  ${MINICONDA_URL} -O /tmp/miniconda.sh 
-            chmod +x /tmp/miniconda.sh && /tmp/miniconda.sh -b -u -p ~/miniconda3 && rm -f /tmp/miniconda.sh
-            echo "export PATH=~/miniconda3/bin:\$PATH" >> ~/.bashrc 
-            source ~/.bashrc && pip install --upgrade pip || true 
-        fi
-        source ~/.bashrc
-        pip install pydot && pip install requests 
-        pip install conan 
+function install_python_dep() {
+    if [ ! -d ~/miniconda3 ]; then
+        echo "Installing conda"  
+        MINICONDA_VERSION=py310_23.1.0-1
+        MINICONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-${MINICONDA_VERSION}-Linux-$(arch).sh 
+        wget --progress=dot:mega  ${MINICONDA_URL} -O /tmp/miniconda.sh 
+        chmod +x /tmp/miniconda.sh && /tmp/miniconda.sh -b -u -p ~/miniconda3 && rm -f /tmp/miniconda.sh
+        echo "export PATH=~/miniconda3/bin:\$PATH" >> ~/.bashrc 
+        source ~/.bashrc && pip install --upgrade pip || true 
     fi
+    source ~/.bashrc
+    pip install -r "${CUR_DIR}/../requirements.txt"
+}
 
+function check_conan() {
     if [ -z "${CONAN_HOME:-}" ]; then
         export CONAN_HOME=~/.conan2
     fi
@@ -76,7 +95,9 @@ function check_conan() {
     sed -i 's/gnu14/gnu17/g' ${CONAN_HOME}/profiles/default
 }
 
+check_basic_tools
 check_compiler
+install_python_dep
 check_conan
 
 install_bolt_deps_script="${CUR_DIR}/install-bolt-deps.sh"
