@@ -170,24 +170,24 @@ std::string errorMessage(fmt::string_view fmt, const Args&... args) {
 
 } // namespace detail
 
-#define _BOLT_THROW_IMPL(                                                \
-    exception, exprStr, errorSource, errorCode, isRetriable, ...)        \
-  {                                                                      \
-    /* GCC 9.2.1 doesn't accept this code with constexpr. */             \
-    static const ::bytedance::bolt::detail::BoltCheckFailArgs            \
-        boltCheckFailArgs = {                                            \
-            __FILE__,                                                    \
-            __LINE__,                                                    \
-            __FUNCTION__,                                                \
-            exprStr,                                                     \
-            errorSource,                                                 \
-            errorCode,                                                   \
-            isRetriable};                                                \
-    auto message = ::bytedance::bolt::detail::errorMessage(__VA_ARGS__); \
-    ::bytedance::bolt::detail::boltCheckFail<                            \
-        exception,                                                       \
-        typename ::bytedance::bolt::detail::BoltCheckFailStringType<     \
-            decltype(message)>::type>(boltCheckFailArgs, message);       \
+#define _BOLT_THROW_IMPL(                                                     \
+    exception, exprStr, errorSource, errorCode, isRetriable, ...)             \
+  {                                                                           \
+    /* GCC 9.2.1 doesn't accept this code with constexpr. */                  \
+    static const ::bytedance::bolt::detail::BoltCheckFailArgs                 \
+        boltCheckFailArgs = {                                                 \
+            __FILE__,                                                         \
+            __LINE__,                                                         \
+            __FUNCTION__,                                                     \
+            exprStr,                                                          \
+            errorSource,                                                      \
+            errorCode,                                                        \
+            isRetriable};                                                     \
+    auto message = ::bytedance::bolt::detail::errorMessage(__VA_ARGS__);      \
+    ::bytedance::bolt::detail::boltCheckFail<                                 \
+        exception,                                                            \
+        typename ::bytedance::bolt::detail::BoltCheckFailStringType<decltype( \
+            message)>::type>(boltCheckFailArgs, message);                     \
   }
 
 #define _BOLT_CHECK_AND_THROW_IMPL(                                            \
@@ -342,6 +342,17 @@ DECLARE_CHECK_FAIL_TEMPLATES(::bytedance::bolt::BoltRuntimeError);
       ::bytedance::bolt::error_source::kErrorSourceRuntime.c_str(), \
       ::bytedance::bolt::error_code::kInvalidState.c_str(),         \
       /* isRetriable */ false,                                      \
+      ##__VA_ARGS__)
+
+/// Throws VeloxRuntimeError when functions receive input values out of the
+/// supported range. This should only be used when we want to force TRY() to not
+/// suppress the error.
+#define BOLT_FAIL_UNSUPPORTED_INPUT_UNCATCHABLE(...)                       \
+  _BOLT_THROW(                                                             \
+      ::bytedance::bolt::BoltRuntimeError,                                 \
+      ::bytedance::bolt::error_source::kErrorSourceRuntime.c_str(),        \
+      ::bytedance::bolt::error_code::kUnsupportedInputUncatchable.c_str(), \
+      /* isRetriable */ false,                                             \
       ##__VA_ARGS__)
 
 DECLARE_CHECK_FAIL_TEMPLATES(::bytedance::bolt::BoltUserError);

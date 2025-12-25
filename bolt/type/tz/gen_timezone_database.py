@@ -13,20 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# --------------------------------------------------------------------------
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates.
-# SPDX-License-Identifier: Apache-2.0
-#
-# This file has been modified by ByteDance Ltd. and/or its affiliates on
-# 2025-11-11.
-#
-# Original file was released under the Apache License 2.0,
-# with the full license text available at:
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# This modified file is released under the same license.
-# --------------------------------------------------------------------------
-
 
 import argparse
 import sys
@@ -50,6 +36,21 @@ cpp_template = Template(
  * limitations under the License.
  */
 
+/* --------------------------------------------------------------------------
+ * Copyright (c) 2025 ByteDance Ltd. and/or its affiliates.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * This file has been modified by ByteDance Ltd. and/or its affiliates on
+ * 2025-11-11.
+ *
+ * Original file was released under the Apache License 2.0,
+ * with the full license text available at:
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * This modified file is released under the same license.
+ * --------------------------------------------------------------------------
+ */
+
 // This file is generated. Do not modify it manually. To re-generate it, run:
 //
 //  ./bolt/type/tz/gen_timezone_database.py -f /tmp/zone-index.properties \\
@@ -62,21 +63,27 @@ cpp_template = Template(
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
-namespace facebook::bolt::util {
+namespace bytedance::bolt::tz {
 
-const std::unordered_map<int64_t, std::string>& getTimeZoneDB() {
-  static std::unordered_map<int64_t, std::string> tzDB = {
+const std::vector<std::pair<int16_t, std::string>>& getTimeZoneEntries() {
+  static auto* tzDB = new std::vector<std::pair<int16_t, std::string>>([] {
+    // Work around clang compiler bug causing multi-hour compilation
+    // with -fsanitize=fuzzer
+    // https://github.com/llvm/llvm-project/issues/75666
+    return std::vector<std::pair<int16_t, std::string>>{
 $entries
-  };
-  return tzDB;
+    };
+  }());
+  return *tzDB;
 }
 
-} // namespace facebook::bolt::util\
+} // namespace bytedance::bolt::tz\
 """
 )
 
-entry_template = Template('      {$tz_id, "$tz_name"},')
+entry_template = Template('        {$tz_id, "$tz_name"},')
 
 
 def parse_arguments():
