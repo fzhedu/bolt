@@ -402,6 +402,9 @@ TEST(TimestampTest, outOfRange) {
   auto copy = t;
   ASSERT_NO_THROW(copy.toTimezone(*timezone));
   EXPECT_EQ(copy.getSeconds(), t.getSeconds());
+  copy = t;
+  ASSERT_NO_THROW(copy.toGMT(*timezone));
+  EXPECT_EQ(copy.getSeconds(), t.getSeconds());
 
   copy = t;
   auto* shanghai = tz::locateZone("Asia/Shanghai");

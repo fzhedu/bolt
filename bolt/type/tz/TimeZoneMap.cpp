@@ -265,8 +265,10 @@ std::string normalizeTimeZone(const std::string& originalZoneId) {
 template <typename TDuration>
 void validateRangeImpl(time_point<TDuration> timePoint) {
   using namespace ::date;
-  static constexpr auto kMinYear = year::min();
-  static constexpr auto kMaxYear = year::max();
+  // update year range as using int64_t to store us
+  // and toCivilDateTime can handle the year range [-290308, 294247]
+  static constexpr auto kMinYear = year(-290308);
+  static constexpr auto kMaxYear = year(294247);
 
   if (timePoint.time_since_epoch() <
           std::chrono::seconds(std::numeric_limits<int64_t>::min() / 1000) ||
@@ -287,7 +289,6 @@ void validateRangeImpl(time_point<TDuration> timePoint) {
     // VeloxRuntimeError to avoid it being suppressed by TRY().
     std::stringstream ss;
     ss << "[" << kMinYear << ", " << kMaxYear << "], got " << year;
-    ss << "\n trace : " << process::StackTrace().toString();
     BOLT_USER_FAIL(fmt::format(
         "Timepoint is outside of supported year range: {}", ss.str()));
   }
@@ -332,7 +333,7 @@ TDuration toLocalImpl(
     const ::date::time_zone* tz,
     const std::chrono::minutes offset) {
   ::date::sys_time<TDuration> timePoint{timestamp};
-  // validateRange(timePoint);
+  validateRange(timePoint);
 
   // If this is an offset time zone.
   if (tz == nullptr) {

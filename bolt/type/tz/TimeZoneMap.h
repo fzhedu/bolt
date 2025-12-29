@@ -46,13 +46,13 @@ namespace bytedance::bolt::tz {
 /// This library provides time zone management primitives. It maintains an
 /// internal static database which is contructed lazily based on the first
 /// access, based on TimeZoneDatabase.cpp and the local tzdata installed in your
-/// system (through velox/external/tzdata).
+/// system.
 ///
 /// It provides functions for one to lookup TimeZone pointers based on time zone
 /// name or ID, and to performance timestamp conversion across time zones.
 ///
 /// This library provides a layer of functionality on top of
-/// velox/external/tzdata, so do not use the external library directly for
+/// date/tz library, so do not use the external library directly for
 /// time zone routines.
 
 class TimeZone;
