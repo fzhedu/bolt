@@ -67,6 +67,20 @@ RUN cd /tmp && \
 # Add mold's ld as the first on the path
 env PATH=/usr/local/libexec/mold:$PATH
 
+# License header check tool
+RUN https_proxy=${https_proxy} curl -L -# -o /tmp/skywalking-eyes-bin.tgz https://dlcdn.apache.org/skywalking/eyes/0.8.0/skywalking-license-eye-0.8.0-bin.tgz && \
+    mkdir -p /opt/skywalking-license-eye && \
+    sudo tar -C /opt/skywalking-license-eye --strip-components=1 -xzf /tmp/skywalking-eyes-bin.tgz
+
+ENV PATH="/opt/skywalking-license-eye/bin/linux:${PATH}"
+    
+# Set up default python virtualenv, and make it the default on PATH
+RUN virtualenv -p python3 /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt && \
+    rm -f requirements.txt
+
 ARG USERNAME=code
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
@@ -78,19 +92,7 @@ RUN groupadd --gid $USER_GID $USERNAME \
 
 USER $USERNAME
 
-# Create a default virtualenv that is activated on login
-RUN virtualenv -p python3 ~/venv \
-    && echo "source ~/venv/bin/activate" >> ~/.bashrc \
-    && echo "source ~/venv/bin/activate" >> ~/.bash_profile \
-    && echo "source ~/venv/bin/activate" >> ~/.profile
-
-COPY requirements.txt .
-
-RUN source ~/venv/bin/activate && pip install --no-cache-dir -r requirements.txt \
-    && rm -f requirements.txt
-
-RUN source ~/venv/bin/activate && \
-    conan profile detect && \
+RUN conan profile detect && \
     sed -i 's/gnu14/gnu17/g' ~/.conan2/profiles/default
 
 # Configure default conan profile to use the mold linker
@@ -115,7 +117,8 @@ os=Linux
 tools.build:compiler_executables={"c": "clang", "cpp": "clang++"}
 EOF
 
-SHELL ["/bin/bash", "-c"]
+ENV SHELL=/bin/bash
+
 WORKDIR /workspace
 
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["/bin/bash", "-c"]

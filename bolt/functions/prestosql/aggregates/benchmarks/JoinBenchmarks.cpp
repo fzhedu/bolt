@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "bolt/exec/Task.h"
 #include "bolt/exec/tests/utils/AssertQueryBuilder.h"
 #include "bolt/exec/tests/utils/HiveConnectorTestBase.h"
 #include "bolt/exec/tests/utils/PlanBuilder.h"
@@ -401,7 +402,11 @@ class VariousAggregatesBenchmark : public HiveConnectorTestBase {
     // configs[core::QueryConfig::kMaxOutputBatchRows] = "1024";
     queryCtx->testingOverrideConfigUnsafe(std::move(configs));
     auto task = exec::Task::create(
-        "t", std::move(plan), 0, queryCtx, Task::ExecutionMode::kParallel);
+        "t",
+        std::move(plan),
+        0,
+        queryCtx,
+        exec::Task::ExecutionMode::kParallel);
     task->setSpillDirectory("/tmp/" + task->uuid(), false);
     return task;
   }
