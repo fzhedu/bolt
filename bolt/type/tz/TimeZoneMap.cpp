@@ -155,32 +155,38 @@ inline bool startsWith(std::string_view str, const char* prefix) {
 }
 
 inline bool isTimeZoneOffset(std::string_view str) {
-  return str.size() >= 3 && (str[0] == '+' || str[0] == '-');
+  return str.size() >= 2 && (str[0] == '+' || str[0] == '-');
 }
 
 // The timezone parsing logic follows what is defined here:
 //   https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 inline bool isUtcEquivalentName(std::string_view zone) {
   static folly::F14FastSet<std::string> utcSet = {
-      "utc", "uct", "gmt", "gmt0", "greenwich", "universal", "zulu", "z"};
+      "utc", "uct", "gmt", "gmt0", "greenwich", "universal", "zulu", "ut", "z"};
   return utcSet.find(zone) != utcSet.end();
 }
 
 // This function tries to apply two normalization rules to time zone offsets:
 //
-// 1. If the offset only defines the hours portion, assume minutes are zeroed
+// 1. If the offset only defines the single hours portion, assume minutes are
+// zeroed out (e.g. "+0" -> "+00:00")
+//
+// 2. If the offset only defines the hours portion, assume minutes are zeroed
 // out (e.g. "+00" -> "+00:00")
 //
-// 2. Check if the ':' in between in missing; if so, correct the offset string
+// 3. Check if the ':' in between in missing; if so, correct the offset string
 // (e.g. "+0000" -> "+00:00").
 //
 // This function assumes the first character is either '+' or '-'.
 std::string normalizeTimeZoneOffset(const std::string& zoneOffset) {
+  if (zoneOffset.size() == 2 && isDigit(zoneOffset[1])) {
+    return std::string() + zoneOffset[0] + '0' + zoneOffset[1] + ":00";
+  }
   if (zoneOffset.size() == 3 && isDigit(zoneOffset[1]) &&
       isDigit(zoneOffset[2])) {
     return zoneOffset + ":00";
-  } else if (
-      zoneOffset.size() == 5 && isDigit(zoneOffset[1]) &&
+  }
+  if (zoneOffset.size() == 5 && isDigit(zoneOffset[1]) &&
       isDigit(zoneOffset[2]) && isDigit(zoneOffset[3]) &&
       isDigit(zoneOffset[4])) {
     return zoneOffset.substr(0, 3) + ':' + zoneOffset.substr(3, 2);
