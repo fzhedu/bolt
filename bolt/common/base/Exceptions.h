@@ -344,7 +344,7 @@ DECLARE_CHECK_FAIL_TEMPLATES(::bytedance::bolt::BoltRuntimeError);
       /* isRetriable */ false,                                      \
       ##__VA_ARGS__)
 
-/// Throws VeloxRuntimeError when functions receive input values out of the
+/// Throws BoltRuntimeError when functions receive input values out of the
 /// supported range. This should only be used when we want to force TRY() to not
 /// suppress the error.
 #define BOLT_FAIL_UNSUPPORTED_INPUT_UNCATCHABLE(...)                       \
