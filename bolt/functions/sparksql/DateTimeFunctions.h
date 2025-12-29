@@ -606,9 +606,9 @@ struct ToUtcTimestampFunction {
       const arg_type<Timestamp>& timestamp,
       const arg_type<Varchar>& timezone) {
     result = timestamp;
-    auto fromTimezone = timezone_ ? timezone_
-                                  : tz::locateZone(std::string_view(
-                                        timezone.data(), timezone.size()));
+    auto fromTimezone = timezone_
+        ? timezone_
+        : tz::locateZone(std::string_view(timezone.data(), timezone.size()));
     result.toGMT(*fromTimezone);
   }
 
@@ -636,9 +636,9 @@ struct FromUtcTimestampFunction {
       const arg_type<Timestamp>& timestamp,
       const arg_type<Varchar>& timezone) {
     result = timestamp;
-    auto toTimezone = timezone_ ? timezone_
-                                : tz::locateZone(std::string_view(
-                                      timezone.data(), timezone.size()));
+    auto toTimezone = timezone_
+        ? timezone_
+        : tz::locateZone(std::string_view(timezone.data(), timezone.size()));
     result.toTimezone(*toTimezone);
   }
 
