@@ -29,6 +29,7 @@
  * --------------------------------------------------------------------------
  */
 #include "bolt/type/tz/TimeZoneMap.h"
+#include <common/process/StackTrace.h>
 #include <date/tz.h>
 
 #include <boost/algorithm/string.hpp>
@@ -280,6 +281,7 @@ void validateRangeImpl(time_point<TDuration> timePoint) {
     // VeloxRuntimeError to avoid it being suppressed by TRY().
     std::stringstream ss;
     ss << "[" << kMinYear << ", " << kMaxYear << "], got " << year;
+    ss << "\n trace : " << process::StackTrace().toString();
     BOLT_USER_FAIL(fmt::format(
         "Timepoint is outside of supported year range: {}", ss.str()));
   }
@@ -324,7 +326,7 @@ TDuration toLocalImpl(
     const ::date::time_zone* tz,
     const std::chrono::minutes offset) {
   ::date::sys_time<TDuration> timePoint{timestamp};
-  validateRange(timePoint);
+  // validateRange(timePoint);
 
   // If this is an offset time zone.
   if (tz == nullptr) {

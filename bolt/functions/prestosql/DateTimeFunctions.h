@@ -1778,8 +1778,6 @@ struct FormatDateTimeFunction {
     Timestamp timestamp = Timestamp::fromMillis(milliseconds);
     int16_t timeZoneId = *timestampWithTimezone.template at<1>();
     auto timeZoneName = tz::getTimeZoneName(timeZoneId);
-    std::cout << "begin------------" << timeZoneName << " , id = " << timeZoneId
-              << std::endl;
     auto* timezonePtr = tz::locateZone(timeZoneName, true);
     auto maxResultSize = jodaDateTime_->maxResultSize(timezonePtr);
     result.reserve(maxResultSize);
