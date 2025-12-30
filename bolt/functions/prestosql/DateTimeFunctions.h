@@ -1777,7 +1777,7 @@ struct FormatDateTimeFunction {
     const auto milliseconds = *timestampWithTimezone.template at<0>();
     Timestamp timestamp = Timestamp::fromMillis(milliseconds);
     int16_t timeZoneId = *timestampWithTimezone.template at<1>();
-    auto* timezonePtr = ::date::locate_zone(tz::getTimeZoneName(timeZoneId));
+    auto* timezonePtr = tz::locateZone(timeZoneId);
     auto maxResultSize = jodaDateTime_->maxResultSize(timezonePtr);
     result.reserve(maxResultSize);
     auto resultSize = jodaDateTime_->format(
