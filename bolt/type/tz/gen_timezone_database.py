@@ -17,7 +17,8 @@
 # Copyright (c) 2025 ByteDance Ltd. and/or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates.
+# This file has been modified by ByteDance Ltd. and/or its affiliates on
+# 2025-11-11.
 #
 # Original file was released under the Apache License 2.0,
 # with the full license text available at:
@@ -52,8 +53,7 @@ cpp_template = Template(
  * Copyright (c) 2025 ByteDance Ltd. and/or its affiliates.
  * SPDX-License-Identifier: Apache-2.0
  *
- * This file has been modified by ByteDance Ltd. and/or its affiliates on
- * 2025-11-11.
+ * This file has been modified by ByteDance Ltd. and/or its affiliates.
  *
  * Original file was released under the Apache License 2.0,
  * with the full license text available at:
