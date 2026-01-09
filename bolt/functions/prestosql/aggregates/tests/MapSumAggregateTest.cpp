@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 ByteDance Ltd. and/or its affiliates
+ * Copyright (c) ByteDance Ltd. and/or its affiliates
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -514,6 +514,32 @@ TEST_F(MapSumAggTest, castTruncate) {
   auto inputVec = makeMapVector(data);
   auto expectedVec = makeMapVector(expected);
 
+  testAggregations(
+      {makeRowVector({inputVec})},
+      {},
+      {"aggregate_map_sum(c0)"},
+      {makeRowVector({expectedVec})});
+}
+
+TEST_F(MapSumAggTest, simpleStringValue) {
+  auto data = std::vector<
+      std::vector<std::pair<StringView, std::optional<StringView>>>>{
+      {{"0", "1"}}, {{"0", "2"}}};
+  auto expected = getExpectedResult(
+      std::vector<std::vector<std::pair<StringView, std::optional<int64_t>>>>{
+          {{"0", 1}}, {{"0", 2}}});
+  testGlobal<false, StringView>(data, expected);
+}
+
+TEST_F(MapSumAggTest, stringCastTruncate) {
+  auto data = std::vector<
+      std::vector<std::pair<StringView, std::optional<StringView>>>>{
+      {{"0", "1.9"}}};
+  auto expected =
+      std::vector<std::vector<std::pair<StringView, std::optional<int64_t>>>>{
+          {{"0", 1}}};
+  auto inputVec = makeMapVector(data);
+  auto expectedVec = makeMapVector(expected);
   testAggregations(
       {makeRowVector({inputVec})},
       {},

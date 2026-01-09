@@ -12,10 +12,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
-/* --------------------------------------------------------------------------
- * Copyright (c) 2025 ByteDance Ltd. and/or its affiliates.
+ *
+ * --------------------------------------------------------------------------
+ * Copyright (c) ByteDance Ltd. and/or its affiliates.
  * SPDX-License-Identifier: Apache-2.0
  *
  * This file has been modified by ByteDance Ltd. and/or its affiliates on
@@ -594,6 +593,8 @@ std::string getSpecifierName(DateTimeFormatSpecifier s) {
       return "WEEK_OF_MONTH";
     case DateTimeFormatSpecifier::DAY_OF_WEEK_IN_MONTH:
       return "DAY_OF_WEEK_IN_MONTH";
+    default:
+      return "UNKNOWN_SPECIFIER";
   }
 }
 

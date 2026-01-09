@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 ByteDance Ltd. and/or its affiliates
+ * Copyright (c) ByteDance Ltd. and/or its affiliates
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ const char* toString(PaimonRowKind rowKind) {
       return "+U";
     case PaimonRowKind::DELETE:
       return "-D";
+    default:
+      return "UNKNOWN_ROW_KIND";
   }
 }
 

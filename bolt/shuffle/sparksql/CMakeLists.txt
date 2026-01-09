@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # --------------------------------------------------------------------------
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates.
+# Copyright (c) ByteDance Ltd. and/or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 #
 # This file has been modified by ByteDance Ltd. and/or its affiliates on
@@ -46,13 +46,26 @@ add_library(
     partition_writer/LocalPartitionWriter.cpp
     partition_writer/rss/RemotePartitionWriter.cpp
     partition_writer/rss/CelebornPartitionWriter.cpp
+    partition_writer/rss/NativeCelebornClient.cpp
+    CelebornReaderStreamIterator.cpp
     compression/Compression.cpp
     Payload.cpp
     ShuffleMemoryPool.cpp
     Spill.cpp
     Utils.cpp)
 
-target_link_libraries(bolt_shuffle_spark_impl PUBLIC arrow::arrow ryu::ryu bolt_vector bolt_core bolt_exec)
+find_package(celeborn-cpp-client CONFIG REQUIRED)
+
+target_link_libraries(
+  bolt_shuffle_spark_impl
+  PUBLIC
+    arrow::arrow
+    ryu::ryu
+    bolt_vector
+    bolt_core
+    bolt_exec
+    celeborn-cpp-client::celeborn-cpp-client
+)
 
 if(ENABLE_QAT)
   include(BuildQATzip)
@@ -67,4 +80,8 @@ if(ENABLE_IAA)
   target_include_directories(bolt_shuffle_spark_impl PUBLIC ${QPL_INCLUDE_DIR})
   target_sources(bolt_shuffle_spark_impl PRIVATE compression/qpl/qpl_job_pool.cpp compression/qpl/qpl_codec.cpp)
   target_link_libraries(bolt_shuffle_spark_impl PUBLIC qpl::qpl)
+endif()
+
+if(${BOLT_BUILD_TESTING})
+  add_subdirectory(tests)
 endif()

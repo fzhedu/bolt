@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # --------------------------------------------------------------------------
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates.
+# Copyright (c) ByteDance Ltd. and/or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 #
 # This file has been modified by ByteDance Ltd. and/or its affiliates on
@@ -32,11 +32,23 @@ find_package(sonic-cpp CONFIG REQUIRED)
 add_library(
   bolt_functions_prestosql
   ArithmeticFunctionsRegistration.cpp
+  ArithmeticBasicFunctionsRegistration.cpp
+  ArithmeticExponentialFunctionsRegistration.cpp
+  ArithmeticProbabilityFunctionsRegistration.cpp
+  ArithmeticRandomFunctionsRegistration.cpp
+  ArithmeticDecimalFunctionsRegistration.cpp
+  ArithmeticMiscFunctionsRegistration.cpp
+  ArithmeticTrigonometricFunctionsRegistration.cpp
+  ArithmeticRoundingFunctionsRegistration.cpp
   ArrayFunctionsRegistration.cpp
   BinaryFunctionsRegistration.cpp
   CheckedArithmeticRegistration.cpp
   ComparisonFunctionsRegistration.cpp
   DateTimeFunctionsRegistration.cpp
+  DateTimeFunctionsArithmeticRegistration.cpp
+  DateTimeFunctionsBasicConversionRegistration.cpp
+  DateTimeFunctionsDateComponentExtractionRegistration.cpp
+  DateTimeFunctionsTimeComponentExtractionRegistration.cpp
   GeneralFunctionsRegistration.cpp
   HyperLogFunctionsRegistration.cpp
   JsonFunctionsRegistration.cpp

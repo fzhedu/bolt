@@ -13,9 +13,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/* --------------------------------------------------------------------------
- * Copyright (c) 2025 ByteDance Ltd. and/or its affiliates.
+ *
+ * --------------------------------------------------------------------------
+ * Copyright (c) ByteDance Ltd. and/or its affiliates.
  * SPDX-License-Identifier: Apache-2.0
  *
  * This file has been modified by ByteDance Ltd. and/or its affiliates on
@@ -808,11 +808,15 @@ arrow::Result<std::unique_ptr<InMemoryPayload>> InMemoryPayload::merge(
             std::dynamic_pointer_cast<arrow::ResizableBuffer>(sourceBuffer);
         if (resizable) {
           // If source is resizable, resize and reuse source.
-          RETURN_NOT_OK(resizable->Resize(mergedSize));
+          RETURN_NOT_OK(resizable->Resize(mergedSize + simd::kPadding));
+          RETURN_NOT_OK(resizable->Resize(mergedSize, false));
         } else {
           // Otherwise copy source.
           ARROW_ASSIGN_OR_RAISE(
-              resizable, arrow::AllocateResizableBuffer(mergedSize, pool));
+              resizable,
+              arrow::AllocateResizableBuffer(
+                  mergedSize + simd::kPadding, pool));
+          RETURN_NOT_OK(resizable->Resize(mergedSize, false));
           memcpy(
               resizable->mutable_data(),
               sourceBuffer->data(),

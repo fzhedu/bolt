@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # --------------------------------------------------------------------------
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates.
+# Copyright (c) ByteDance Ltd. and/or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 #
 # This file has been modified by ByteDance Ltd. and/or its affiliates on
@@ -31,4 +31,5 @@ endif()
 add_library(bolt_type_tz TimeZoneMap.h TimeZoneDatabase.cpp TimeZoneMap.cpp TimeZoneNames.cpp)
 
 target_link_libraries(bolt_type_tz ${Boost_REGEX_LIBRARIES} ${FMT}
-                      ${FOLLY_WITH_DEPENDENCIES} date::date)
+                      ${FOLLY_WITH_DEPENDENCIES} date::date
+                      bolt_test_util)

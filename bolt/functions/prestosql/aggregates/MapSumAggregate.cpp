@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 ByteDance Ltd. and/or its affiliates
+ * Copyright (c) ByteDance Ltd. and/or its affiliates
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -338,6 +338,9 @@ std::unique_ptr<exec::Aggregate> constructImpl(
       case TypeKind::DOUBLE:
         return std::make_unique<MapSumAggregate<false, TypeKind::DOUBLE>>(
             resultType, valueType);
+      case TypeKind::VARCHAR:
+        return std::make_unique<MapSumAggregate<false, TypeKind::VARCHAR>>(
+            resultType, valueType);
       default:
         BOLT_FAIL(fmt::format(
             "aggregate_map_sum: invalid value type: {}",
@@ -368,7 +371,7 @@ exec::AggregateRegistrationResult registerMapSum(
         BOLT_USER_CHECK_EQ(argTypes.size(), 1);
         auto type = argTypes[0];
         auto errorMsg = fmt::format(
-            "the argument of {} must be map(varchar, integer type/float type/decimal)",
+            "the argument of {} must be map(varchar, integer type/float type/decimal/varchar)",
             name);
         BOLT_USER_CHECK(type->isMap(), errorMsg);
         auto keyType = type->childAt(0);
@@ -378,7 +381,7 @@ exec::AggregateRegistrationResult registerMapSum(
             valueType->isTinyint() || valueType->isSmallint() ||
                 valueType->isInteger() || valueType->isBigint() ||
                 valueType->isDouble() || valueType->isReal() ||
-                valueType->isDecimal(),
+                valueType->isDecimal() || valueType->isVarchar(),
             errorMsg);
         return constructImpl(resultType, valueType);
       },

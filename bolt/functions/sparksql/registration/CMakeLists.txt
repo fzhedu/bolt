@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # --------------------------------------------------------------------------
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates.
+# Copyright (c) ByteDance Ltd. and/or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 #
 # This file has been modified by ByteDance Ltd. and/or its affiliates on
@@ -39,6 +39,11 @@ add_library(
   RegisterJson.cpp
   RegisterMap.cpp
   RegisterMath.cpp
+  RegisterMathArithmetic.cpp
+  RegisterMathDecimal.cpp
+  RegisterMathMisc.cpp
+  RegisterMathRandom.cpp
+  RegisterMathTrigonometric.cpp
   RegisterMisc.cpp
   RegisterRegexp.cpp
   RegisterSpecialForm.cpp

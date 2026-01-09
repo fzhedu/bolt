@@ -12,10 +12,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
-/* --------------------------------------------------------------------------
- * Copyright (c) 2025 ByteDance Ltd. and/or its affiliates.
+ *
+ * --------------------------------------------------------------------------
+ * Copyright (c) ByteDance Ltd. and/or its affiliates.
  * SPDX-License-Identifier: Apache-2.0
  *
  * This file has been modified by ByteDance Ltd. and/or its affiliates on
@@ -214,11 +213,11 @@ std::shared_ptr<exec::VectorFunction> createSplit(
     }
   } else {
     if (inputArgs.size() == 3 && inputArgs[2].constantValue.get()) {
-      return std::make_shared<Split<false, true, true>>(pattern, limit);
       limit = inputArgs[2]
                   .constantValue.get()
                   ->as<ConstantVector<int32_t>>()
                   ->valueAt(0);
+      return std::make_shared<Split<false, true, true>>(pattern, limit);
     } else {
       return std::make_shared<Split<false, false, true>>(pattern, limit);
     }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025 ByteDance Ltd. and/or its affiliates
+# Copyright (c) ByteDance Ltd. and/or its affiliates
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -359,6 +359,8 @@ class BoltConan(ConanFile):
         self.requires("utf8proc/2.11.0", transitive_headers=True, transitive_libs=True)
         self.requires("date/3.0.4-bolt", transitive_headers=True, transitive_libs=True)
         self.requires("libbacktrace/cci.20210118")
+        if self.options.get_safe("spark_compatible"):
+            self.requires("celeborn-cpp-client/main-20251212")
 
     def build_requirements(self):
         self.tool_requires("m4/1.4.19")
