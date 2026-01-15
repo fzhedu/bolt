@@ -303,7 +303,8 @@ bool CoalescedLoad::loadOrFuture(folly::SemiFuture<bool>* wait) {
     if (isAsyncPreloadThread()) {
       LOG(WARNING) << "thread " << folly::getCurrentThreadName().value()
                    << " CoalescedLoad " << (uint64_t)this << " state "
-                   << (state_ == State::kLoading         ? "kLoading"
+                   << (state_ == State::kLoading
+                           ? "kLoading"
                            : state_ == State::kCancelled ? "kCancelled"
                                                          : "unExpected")
                    << " preload failed: " << e.what();
@@ -736,7 +737,11 @@ bool AsyncDataCache::makeSpace(
   // 'acquired' is not managed by a pool. Make sure it is freed on throw.
   // Destruct without pool and non-empty kills the process.
   auto guard = folly::makeGuard([&]() {
-    allocator_->freeNonContiguous(acquired);
+    try {
+      allocator_->freeNonContiguous(acquired);
+    } catch (...) {
+      LOG(WARNING) << "Exception from freeNonContiguous()";
+    }
     if (isCounted) {
       --numThreadsInAllocate_;
     }
