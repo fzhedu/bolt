@@ -303,8 +303,7 @@ bool CoalescedLoad::loadOrFuture(folly::SemiFuture<bool>* wait) {
     if (isAsyncPreloadThread()) {
       LOG(WARNING) << "thread " << folly::getCurrentThreadName().value()
                    << " CoalescedLoad " << (uint64_t)this << " state "
-                   << (state_ == State::kLoading
-                           ? "kLoading"
+                   << (state_ == State::kLoading         ? "kLoading"
                            : state_ == State::kCancelled ? "kCancelled"
                                                          : "unExpected")
                    << " preload failed: " << e.what();
