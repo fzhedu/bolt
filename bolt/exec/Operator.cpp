@@ -331,7 +331,8 @@ void OperatorCtx::traverseOpToGetRowCount(
         BOLT_CHECK_NE(
             hasBeenProcessedRowCountStr,
             "",
-            "hasBeenProcessedRowCountStr can't be empty");
+            "hasBeenProcessedRowCountStr can't be empty, operator {}",
+            operators[i]->toString());
 
         totalRowCount = folly::to<uint64_t>(totalRowCountStr);
         processedRowCount = folly::to<uint64_t>(hasBeenProcessedRowCountStr);
@@ -1121,15 +1122,18 @@ void Operator::MemoryReclaimer::enterArbitration() {
   }
 
   Driver* const runningDriver = driverThreadCtx->driverCtx()->driver;
-  if (auto opDriver = ensureDriver()) {
-    // NOTE: the current running driver might not be the driver of the operator
-    // that requests memory arbitration. The reason is that an operator might
-    // extend the buffer allocated from the other operator either from the same
-    // or different drivers. But they must be from the same task.
-    BOLT_CHECK_EQ(
-        runningDriver->task()->taskId(),
-        opDriver->task()->taskId(),
-        "The current running driver and the request driver must be from the same task");
+  if (!FLAGS_bolt_memory_pool_capacity_transfer_across_tasks) {
+    if (auto opDriver = ensureDriver()) {
+      // NOTE: the current running driver might not be the driver of the
+      // operator that requests memory arbitration. The reason is that an
+      // operator might extend the buffer allocated from the other operator
+      // either from the same or different drivers. But they must be from the
+      // same task.
+      BOLT_CHECK_EQ(
+          runningDriver->task()->taskId(),
+          opDriver->task()->taskId(),
+          "The current running driver and the request driver must be from the same task");
+    }
   }
   if (runningDriver->task()->enterSuspended(runningDriver->state()) !=
       StopReason::kNone) {
@@ -1147,11 +1151,13 @@ void Operator::MemoryReclaimer::leaveArbitration() noexcept {
     return;
   }
   Driver* const runningDriver = driverThreadCtx->driverCtx()->driver;
-  if (auto opDriver = ensureDriver()) {
-    BOLT_CHECK_EQ(
-        runningDriver->task()->taskId(),
-        opDriver->task()->taskId(),
-        "The current running driver and the request driver must be from the same task");
+  if (!FLAGS_bolt_memory_pool_capacity_transfer_across_tasks) {
+    if (auto opDriver = ensureDriver()) {
+      BOLT_CHECK_EQ(
+          runningDriver->task()->taskId(),
+          opDriver->task()->taskId(),
+          "The current running driver and the request driver must be from the same task");
+    }
   }
   runningDriver->task()->leaveSuspended(runningDriver->state());
 }

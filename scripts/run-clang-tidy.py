@@ -26,174 +26,354 @@
 # This modified file is released under the same license.
 # --------------------------------------------------------------------------
 
-
 import argparse
+import multiprocessing
 import json
-import regex
+import re
 import sys
-
-import util
-
-CODE_CHECKS = """*
-    -abseil-*
-    -android-*
-    -cert-err58-cpp
-    -clang-analyzer-osx-*
-    -cppcoreguidelines-avoid-c-arrays
-    -cppcoreguidelines-avoid-magic-numbers
-    -cppcoreguidelines-pro-bounds-array-to-pointer-decay
-    -cppcoreguidelines-pro-bounds-pointer-arithmetic
-    -cppcoreguidelines-pro-type-reinterpret-cast
-    -cppcoreguidelines-pro-type-vararg
-    -fuchsia-*
-    -google-*
-    -hicpp-avoid-c-arrays
-    -hicpp-deprecated-headers
-    -hicpp-no-array-decay
-    -hicpp-use-equals-default
-    -hicpp-vararg
-    -llvmlibc-*
-    -llvm-header-guard
-    -llvm-include-order
-    -mpi-*
-    -misc-non-private-member-variables-in-classes
-    -misc-no-recursion
-    -misc-unused-parameters
-    -modernize-avoid-c-arrays
-    -modernize-deprecated-headers
-    -modernize-use-nodiscard
-    -modernize-use-trailing-return-type
-    -objc-*
-    -openmp-*
-    -readability-avoid-const-params-in-decls
-    -readability-convert-member-functions-to-static
-    -readability-magic-numbers
-    -zircon-*
-"""
-
-# Additional opt-outs because googletest macros trip too many things.
-#
-TEST_CHECKS = (
-    CODE_CHECKS
-    + """
-    -cert-err58-cpp
-    -cppcoreguidelines-avoid-goto
-    -cppcoreguidelines-avoid-non-const-global-variables
-    -cppcoreguidelines-owning-memory
-    -cppcoreguidelines-pro-type-vararg
-    -cppcoreguidelines-special-member-functions
-    -hicpp-avoid-goto
-    -hicpp-special-member-functions
-    -hicpp-vararg
-    -misc-no-recursion
-    -readability-implicit-bool-conversion
-"""
-)
-
-
-def check_list(check_string):
-    return ",".join([check.strip() for check in check_string.strip().splitlines()])
-
-
-CODE_CHECKS = check_list(CODE_CHECKS)
-TEST_CHECKS = check_list(TEST_CHECKS)
+import os
+import gzip
+import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class Multimap(dict):
     def __setitem__(self, key, value):
         if key not in self:
-            # call super method to avoid recursion
-            dict.__setitem__(self, key, [value])
+            dict.__setitem__(self, key, [value])  # call super method to avoid recursion
         else:
             self[key].append(value)
+
+
+class attrdict(dict):
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
+
+class string(str):
+    def extract(self, rexp):
+        return re.match(rexp, self).group(1)
+
+    def json(self):
+        return json.loads(self, object_hook=attrdict)
+
+
+def run(command, compressed=False, **kwargs):
+    """
+    Helper for git commands.
+    Note: We do not use this for the main clang-tidy execution anymore
+    to allow for streaming output.
+    """
+    if "input" in kwargs:
+        input_data = kwargs["input"]
+
+        if type(input_data) is list:
+            input_data = "\n".join(input_data) + "\n"
+
+        kwargs["input"] = input_data.encode("utf-8")
+
+    reply = subprocess.run(
+        command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwargs
+    )
+
+    if compressed:
+        stdout = gzip.decompress(reply.stdout)
+    else:
+        stdout = reply.stdout
+
+    stdout = (
+        string(stdout.decode("utf-8", errors="ignore").strip())
+        if stdout is not None
+        else ""
+    )
+    stderr = (
+        string(reply.stderr.decode("utf-8").strip()) if reply.stderr is not None else ""
+    )
+
+    if stderr != "":
+        print(stderr, file=sys.stderr)
+
+    return reply.returncode, stdout, stderr
+
+
+def get_filename(filename):
+    return os.path.basename(filename)
+
+
+def get_fileextn(filename):
+    split = os.path.splitext(filename)
+    if len(split) <= 1:
+        return ""
+
+    return split[-1]
+
+
+def script_path():
+    return os.path.dirname(os.path.realpath(sys.argv[0]))
+
+
+def input_files(files):
+    if len(files) == 1 and files[0] == "-":
+        return [file.strip() for file in sys.stdin.readlines()]
+    else:
+        return files
+
+
+def get_all_files(directory, extensions):
+    files = []
+    for root, _, filenames in os.walk(directory):
+        for filename in filenames:
+            if any(filename.endswith(ext) for ext in extensions):
+                files.append(os.path.join(root, filename))
+    return files
 
 
 def git_changed_lines(commit):
     file = ""
     changed_lines = Multimap()
+    returncode, stdout, stderr = run(f"git diff --text --unified=0 {commit}")
 
-    for line in util.run(f"git diff --text --unified=0 {commit}")[1].splitlines():
+    for line in stdout.splitlines():
         line = line.rstrip("\n")
         fields = line.split()
 
-        match = regex.match(r"^\+\+\+ b/.*", line)
+        match = re.match(r"^\+\+\+ b/.*", line)
         if match:
             file = ""
 
-        match = regex.match(r"^\+\+\+ b/(.*(\.cpp|\.h))$", line)
+        match = re.match(r"^\+\+\+ b/(.*(\.c|\.cc|\.cpp|\.cxx|\.h|\.hpp|\.hxx))$", line)
         if match:
             file = match.group(1)
 
-        match = regex.match(r"^@@", line)
+        match = re.match(r"^@@", line)
         if match and file != "":
-            lspan = fields[2].split(",")
-            if len(lspan) <= 1:
-                lspan.append(0)
+            lspan = fields[2].replace("+", "").split(",")
+            start_line = int(lspan[0])
+            count = int(lspan[1]) if len(lspan) > 1 else 1
+            if count > 0:
+                changed_lines[file] = [start_line, start_line + count - 1]
 
-            changed_lines[file] = [int(lspan[0]), int(lspan[0]) + int(lspan[1])]
-
-    return json.dumps(
-        [{"name": key, "lines": value} for key, value in changed_lines.items()]
-    )
+    return changed_lines
 
 
-def checks(args):
-    status, stdout, stderr = util.run(
-        f"clang-tidy -checks='{CODE_CHECKS}' --list-checks"
-    )
-    print(stdout)
+def normalize_path(path):
+    """Normalize path to be relative to git root or absolute"""
+    if os.path.isabs(path):
+        return path
+    return os.path.normpath(path)
 
 
 def check_output(output):
-    return regex.match(r"^/.* warning: ", output)
+    if not output.strip():
+        return True
+    return re.search(r": (warning|error): ", output) is None
+
+
+def run_clang_tidy_batch(cmd_base, file_batch):
+    """
+    Worker function to run clang-tidy on a small batch of files.
+    """
+    full_cmd = cmd_base + file_batch
+    try:
+        proc = subprocess.run(
+            full_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,  # Return strings, not bytes
+            encoding="utf-8",
+            errors="ignore",
+        )
+        return proc.returncode, proc.stdout, proc.stderr
+    except Exception as e:
+        return 1, "", str(e)
+
+
+def process_gha_output(stdout):
+    in_gha = os.environ.get("GITHUB_ACTIONS") is not None
+    if in_gha and stdout:
+        clang_tidy_pattern = (
+            r"^(.*):(\d+):(\d+):\s+(error|warning):\s+(.*) $([a-z0-9,\-]+)$\s*$"
+        )
+        for stdout_line in stdout.split("\n"):
+            m = re.match(clang_tidy_pattern, stdout_line)
+            if m:
+                file_path, line, col, severity, message, rule = m.groups()
+                print(
+                    f"::{severity} file={file_path},line={line},col={col},title={rule}::{message}"
+                )
 
 
 def tidy(args):
-    files = util.input_files(args.files)
+    extensions = (".c", ".cc", ".cpp", ".cxx", ".h", ".hpp", ".hxx")
+    candidate_files = []
+    # get file list to check
+    if args.directory:
+        print(f"Scanning directory: {args.directory} ...")
+        candidate_files = get_all_files(args.directory, extensions)
+    else:
+        candidate_files = input_files(args.files)
+        candidate_files = [f for f in candidate_files if f.endswith(extensions)]
 
-    groups = Multimap()
+    if not candidate_files:
+        print("No valid C/C++ files found to check.")
+        return 0
+    # get build path
+    candidate_files = [normalize_path(f) for f in candidate_files]
 
-    for file in files:
-        groups["test" if "/tests/" in file else "main"] = file
+    if args.exclude:
+        try:
+            exclude_re = re.compile(args.exclude)
+            before_count = len(candidate_files)
+            # Filter files out if the regex matches anywhere in the path
+            candidate_files = [f for f in candidate_files if not exclude_re.search(f)]
 
-    fix = "--fix" if args.fix == "fix" else ""
-    lines = (
-        ("'--line-filter=" + git_changed_lines(args.commit)) + "'"
-        if args.commit is not None
-        else ""
+            excluded_count = before_count - len(candidate_files)
+            if excluded_count > 0:
+                print(
+                    f"Excluded {excluded_count} files based on pattern '{args.exclude}'"
+                )
+
+            if not candidate_files:
+                print("All files were excluded by the filter pattern.")
+                return 0
+
+        except re.error as e:
+            print(
+                f"Error: Invalid regular expression for --exclude: {e}", file=sys.stderr
+            )
+            return 1
+
+    build_path = args.p or os.getenv("BUILD_PATH", "_build/Release")
+    if not build_path:
+        if os.path.isfile("compile_commands.json"):
+            build_path = "."
+        else:
+            print("Error: 'compile_commands.json' not found. Set BUILD_PATH or use -p.")
+            return 1
+
+    files_to_process = []
+    line_filter_json = ""
+
+    if args.commit:
+        changed_lines = git_changed_lines(args.commit)
+
+        final_map = {}
+        for f in candidate_files:
+            if f in changed_lines:
+                final_map[f] = changed_lines[f]
+                files_to_process.append(f)
+
+        if not files_to_process:
+            print("No changes detected in the provided files relative to commit.")
+            return 0
+
+        line_filter_json = json.dumps(
+            [{"name": key, "lines": value} for key, value in final_map.items()]
+        )
+    else:
+        files_to_process = candidate_files
+        line_filter_json = ""
+
+    clang_tidy_bin = args.clang_tidy_binary
+
+    cmd_base = [clang_tidy_bin]
+
+    if args.config_file:
+        cmd_base.append(f"--config-file={args.config_file}")
+    else:
+        cmd_base.append("--format-style=file")
+
+    cmd_base.append(f"-p={build_path}")
+
+    if args.fix:
+        cmd_base.append("--fix")
+
+    cmd_base.append("--quiet")
+
+    if line_filter_json:
+        cmd_base.append(f"--line-filter={line_filter_json}")
+    jobs = args.jobs if args.jobs else max(1, multiprocessing.cpu_count() // 2)
+    chunk_size = 5
+    file_chunks = [
+        files_to_process[i : i + chunk_size]
+        for i in range(0, len(files_to_process), chunk_size)
+    ]
+    print(
+        f"Running {clang_tidy_bin} on {len(files_to_process)} files with {jobs} jobs (Batch size: {chunk_size})..."
     )
+    final_exit_code = 0
 
-    ok = True
-    if groups.get("main", None):
-        status, stdout, stderr = util.run(
-            f"xargs clang-tidy -p=build/release/ --format-style=file -header-filter='.*' --checks='{CODE_CHECKS}' --quiet {fix} {lines}",
-            input=groups["main"],
-        )
-        ok = check_output(stdout) and ok
+    with ThreadPoolExecutor(max_workers=jobs) as executor:
+        future_to_chunk = {
+            executor.submit(run_clang_tidy_batch, cmd_base, chunk): chunk
+            for chunk in file_chunks
+        }
 
-    if groups.get("test", None):
-        status, stdout, stderr = util.run(
-            f"xargs clang-tidy -p=build/release/ --format-style=file -header-filter='.*' --checks='{TEST_CHECKS}' --quiet {fix} {lines}",
-            input=groups["test"],
-        )
-        ok = check_output(stdout) and ok
+        for future in as_completed(future_to_chunk):
+            code, stdout, stderr = future.result()
 
-    return 0 if ok else 1
+            if code != 0:
+                final_exit_code = 1
+            if not check_output(stdout):
+                final_exit_code = 1
+
+            if stdout.strip():
+                process_gha_output(stdout)
+                print(stdout, end="" if stdout.endswith("\n") else "\n")
+
+            if stderr.strip():
+                print(stderr, file=sys.stderr)
+
+    return final_exit_code
 
 
 def parse_args():
-    global parser
-    parser = argparse.ArgumentParser(description="CircliCi Utility")
-    parser.add_argument("--commit")
-    parser.add_argument("--fix")
+    parser = argparse.ArgumentParser(description="Clang Tidy Wrapper Script")
 
-    parser.add_argument("files", metavar="FILES", nargs="+", help="files to process")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--commit",
+        help="Git commit/ref to compare against (incremental check on changed lines)",
+    )
+    group.add_argument(
+        "--directory", "-d", help="Run recursively on all C/C++ files in this directory"
+    )
+
+    parser.add_argument("--fix", action="store_true", help="Automatically apply fixes")
+    parser.add_argument(
+        "-p", help="Path containing 'compile_commands.json' (build directory)"
+    )
+    parser.add_argument(
+        "--config-file", help="Path to specific .clang-tidy configuration file"
+    )
+    parser.add_argument(
+        "--exclude",
+        default="tests/|.*Test\.cpp$|benchmark/|benchmarks/|.*Benchmark\.cpp$|.*Benchmarks\.cpp$|test/",
+        help="Regular expression to exclude files or paths (e.g. 'tests/|.*Test\.cpp$')",
+    )
+    parser.add_argument(
+        "files",
+        metavar="FILES",
+        nargs="*",
+        help="Specific files to process (space separated)",
+    )
+
+    parser.add_argument("-j", "--jobs", type=int, help="Parallel jobs")
+
+    parser.add_argument(
+        "--clang-tidy-binary",
+        default="clang-tidy",
+        help="Path to clang-tidy binary (default: clang-tidy)",
+    )
 
     return parser.parse_args()
 
 
 def main():
-    return tidy(parse_args())
+    try:
+        sys.exit(tidy(parse_args()))
+    except KeyboardInterrupt:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
