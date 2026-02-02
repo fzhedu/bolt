@@ -303,9 +303,9 @@ bool CoalescedLoad::loadOrFuture(folly::SemiFuture<bool>* wait) {
     if (isAsyncPreloadThread()) {
       LOG(WARNING) << "thread " << folly::getCurrentThreadName().value()
                    << " CoalescedLoad " << (uint64_t)this << " state "
-                   << (state_ == State::kLoading         ? "kLoading"
-                           : state_ == State::kCancelled ? "kCancelled"
-                                                         : "unExpected")
+                   << (state_ == State::kLoading           ? "kLoading"
+                           : (state_ == State::kCancelled) ? "kCancelled"
+                                                           : "unExpected")
                    << " preload failed: " << e.what();
       setEndState(State::kLoading, State::kPlanned, State::kCancelled);
       return false;
@@ -738,8 +738,8 @@ bool AsyncDataCache::makeSpace(
   auto guard = folly::makeGuard([&]() {
     try {
       allocator_->freeNonContiguous(acquired);
-    } catch (...) {
-      LOG(WARNING) << "Exception from freeNonContiguous()";
+    } catch (std::exception& e) {
+      LOG(ERROR) << "Exception from freeNonContiguous(): " << e.what();
     }
     if (isCounted) {
       --numThreadsInAllocate_;

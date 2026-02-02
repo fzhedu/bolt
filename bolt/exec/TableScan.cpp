@@ -476,10 +476,11 @@ void TableScan::preload(std::shared_ptr<connector::ConnectorSplit> split) {
         // let TableScan::close() wait for this AsyncSource to finish
         auto guard = folly::makeGuard([&] {
           try {
-            if (ctx->asyncThreadCtx())
+            if (ctx->asyncThreadCtx()) {
               ctx->asyncThreadCtx()->out();
-          } catch (...) {
-            LOG(ERROR) << "Exception in TableScan::preload guard";
+            }
+          } catch (std::exception& e) {
+            LOG(ERROR) << "Exception in TableScan::preload guard: " << e.what();
           }
         });
         if (ctx->asyncThreadCtx()) {

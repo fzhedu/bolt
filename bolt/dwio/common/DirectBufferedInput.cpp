@@ -250,8 +250,9 @@ void DirectBufferedInput::readRegions(
           auto guard = folly::makeGuard([&]() {
             try {
               asyncLoad.asyncThreadCtx->out();
-            } catch (...) {
-              LOG(WARNING) << "Exception from asyncThreadCtx->out()";
+            } catch (std::exception& e) {
+              LOG(ERROR) << "Exception from asyncThreadCtx->out(): "
+                         << e.what();
             }
           });
           asyncLoad.asyncThreadCtx->in(); // trace in-flight loading
