@@ -1178,9 +1178,6 @@ RowVectorPtr HashProbe::getOutput() {
         }
       }
     } else {
-      BOLT_CHECK_NOT_NULL(operatorCtx_);
-      BOLT_CHECK_NOT_NULL(operatorCtx_->driverCtx());
-      BOLT_CHECK_NOT_NULL(resultIter_);
       if (probeRangePartition_ && needLastProbeSideOutput() && includingMiss_) {
         numOut = table_->listJoinResults(
             *resultIter_,

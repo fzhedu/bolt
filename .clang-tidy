@@ -1,4 +1,3 @@
----
 # Configure clang-tidy for this project.
 
 # Here is an explanation for why some of the checks are disabled:
@@ -97,6 +96,7 @@ Checks: >
   -modernize-avoid-c-arrays,
   -modernize-type-traits,
   -modernize-unary-static-assert,
+  -modernize-use-constraints,
   -performance-move-const-arg,
   -performance-avoid-endl,
   -performance-enum-size,
